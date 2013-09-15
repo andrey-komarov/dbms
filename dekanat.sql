@@ -33,18 +33,27 @@ create table StudentsInGroups (
 create table CoursesRead (
     Id int not null primary key,
     Year char(4) not null,
-    CourseId int not null references Courses(Id)
+    CourseId int not null references Courses(Id),
+    WhoTaughtCourse int not null,
+    GroupTaughtCourseTo int not null
 );
 
 create table CourseReadPerson (
+    Id int not null primary key,
     PersonId int not null references Persons(Id),
     CourseReadId int not null references CoursesRead(Id)
 );
 
 create table CourseReadToGroups (
+    Id int not null primary key,
     GroupId int not null references Groups(Id),
     CourseReadId int not null references CoursesRead(Id)
 );
+
+alter table CoursesRead add constraint CoursesRead_fk1
+    foreign key (WhoTaughtCourse) references CourseReadPerson(Id);
+alter table CoursesRead add constraint CoursesRead_fk2
+    foreign key (GroupTaughtCourseTo) references CourseReadToGroups(Id);
 
 create table Marks (
     StudentId int not null,
@@ -76,19 +85,22 @@ insert into StudentsInGroups (PersonId, GroupId) values
     (1, 1),
     (2, 2);
 
-insert into CoursesRead (Id, Year, CourseId) values
-    (1, '2013', 1),
-    (2, '2013', 2);
+--insert into CoursesRead (Id, Year, CourseId) values
+--    (1, '2013', 1),
+--    (2, '2013', 2);
 
-insert into CourseReadToGroups (GroupId, CourseReadId) values
-    (1, 1),
-    (2, 2);
+--insert into CourseReadToGroups (GroupId, CourseReadId) values
+--    (1, 1),
+--    (2, 2);
 
-insert into CourseReadPerson (PersonId, CourseReadId) values
-    (3, 1);
+--insert into CourseReadPerson (PersonId, CourseReadId) values
+--    (3, 1);
 
-insert into Marks (StudentId, ReadCourseId, Mark) values
-    (1, 1, 5);
+--insert into Marks (StudentId, ReadCourseId, Mark) values
+--    (1, 1, 5);
+
+alter table CoursesRead drop constraint CoursesRead_fk1;
+alter table CoursesRead drop constraint CoursesRead_fk2;
 
 drop table Marks;
 drop table CourseReadPerson;

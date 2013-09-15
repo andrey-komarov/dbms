@@ -55,6 +55,41 @@ create table Marks (
     constraint mark_ok check (Mark <= 5 and Mark > 1)
 );
 
+insert into Persons (Id, FirstName, LastName) values
+    (1, 'Андрей', 'Комаров'),
+    (2, 'Сергей', 'Мельников'),
+    (3, 'Георгий', 'Корнеев');
+
+insert into Groups (Id, GroupNo) values
+    (1, '4538'),
+    (2, '6538');
+
+insert into Courses (Id, Name) values
+    (1, 'Введение в системы баз данных'),
+    (2, 'Компьютерные сети');
+
+insert into CanTeach (PersonId, CourseId) values
+    (2, 2),
+    (3, 1);
+
+insert into StudentsInGroups (PersonId, GroupId) values
+    (1, 1),
+    (2, 2);
+
+insert into CoursesRead (Id, Year, CourseId) values
+    (1, '2013', 1),
+    (2, '2013', 2);
+
+insert into CourseReadToGroups (GroupId, CourseReadId) values
+    (1, 1),
+    (2, 2);
+
+insert into CourseReadPerson (PersonId, CourseReadId) values
+    (3, 1);
+
+insert into Marks (StudentId, ReadCourseId, Mark) values
+    (1, 1, 5);
+
 drop table Marks;
 drop table CourseReadPerson;
 drop table CourseReadToGroups;

@@ -5,10 +5,11 @@
  * 
  */
 
-DROP TABLE IF EXISTS persons CASCADE;
+DROP TABLE IF EXISTS songs CASCADE;
 DROP TABLE IF EXISTS albums CASCADE;
 DROP TABLE IF EXISTS artists CASCADE;
-DROP TABLE IF EXISTS genre CASCADE;
+
+--DROP TABLE IF EXISTS 
 DROP FUNCTION IF EXISTS check_new_album_year();
 
 /************
@@ -28,26 +29,28 @@ CREATE TABLE albums (
        year         int
 );
 
-CREATE TABLE persons (
-       id            SERIAL PRIMARY KEY,
-       firstname     text,
-       lastname      text
-);
-
-CREATE TABLE genres (
+CREATE TABLE songs (
        id          SERIAL PRIMARY KEY,
-       name        text UNIQUE
+       title       text NOT NULL,
+       artist      SERIAL NOT NULL REFERENCES artists
 );
 
 /**********************
  * Сущности кончились *
  **********************/
 
-CREATE TABLE albums_genre (
-       album              SERIAL REFERENCES albums,
-       genre              SERIAL REFERENCES genres,
-       UNIQUE (album, genre)
+CREATE TABLE covers (
+       original     SERIAL NOT NULL REFERENCES songs,
+       cover        SERIAL NOT NULL REFERENCES songs,
+       UNIQUE(original, cover)
 );
+
+
+
+
+/**********************
+ * Таблички кончились *
+ **********************/
 
 CREATE OR REPLACE FUNCTION check_new_album_year()
        RETURNS trigger as
@@ -59,7 +62,6 @@ BEGIN
        INTO bad
        FROM artists
        WHERE NEW.year < artists.year;
-   RAISE NOTICE 'ololo %', bad;
    IF FOUND THEN
       RAISE EXCEPTION 'Bad <<%>>''s year', NEW.name;
    END IF;
@@ -72,23 +74,13 @@ CREATE TRIGGER album_released_after_group_establishment
        FOR EACH ROW 
        EXECUTE PROCEDURE check_new_album_year();
 
-CREATE TABLE persons (
-       id            SERIAL PRIMARY KEY,
-       firstname     text,
-       lastname      text
-);
-
 INSERT INTO artists (name, year) VALUES
        ('Ayreon', 1995);
-
-INSERT INTO persons (first_name, last_name) VALUES
-       ('Arjen', 'Lucassen');
 
 INSERT INTO albums (name, artist, year) 
        SELECT 'The Human Equation', artists.id, 2004
        FROM artists 
        WHERE name = 'Ayreon';
-
 
 SELECT * FROM albums;
 

@@ -5,10 +5,15 @@
  * 
  */
 
-DROP TABLE IF EXISTS persons;
+DROP TABLE IF EXISTS persons CASCADE;
 DROP TABLE IF EXISTS albums CASCADE;
-DROP TABLE IF EXISTS artists;
-DROP FUNCTION IF EXISTS check_album_year();
+DROP TABLE IF EXISTS artists CASCADE;
+DROP TABLE IF EXISTS genre CASCADE;
+DROP FUNCTION IF EXISTS check_new_album_year();
+
+/************
+ * Сущности *
+ ************/
 
 CREATE TABLE artists (
        id            SERIAL PRIMARY KEY,
@@ -21,6 +26,27 @@ CREATE TABLE albums (
        name         text NOT NULL,
        artist       SERIAL NOT NULL REFERENCES artists,
        year         int
+);
+
+CREATE TABLE persons (
+       id            SERIAL PRIMARY KEY,
+       firstname     text,
+       lastname      text
+);
+
+CREATE TABLE genres (
+       id          SERIAL PRIMARY KEY,
+       name        text UNIQUE
+);
+
+/**********************
+ * Сущности кончились *
+ **********************/
+
+CREATE TABLE albums_genre (
+       album              SERIAL REFERENCES albums,
+       genre              SERIAL REFERENCES genres,
+       UNIQUE (album, genre)
 );
 
 CREATE OR REPLACE FUNCTION check_new_album_year()
@@ -38,7 +64,8 @@ BEGIN
       RAISE EXCEPTION 'Bad <<%>>''s year', NEW.name;
    END IF;
    RETURN NEW;
-END; $$ LANGUAGE plpgsql;
+END; 
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER album_released_after_group_establishment
        BEFORE INSERT OR UPDATE ON albums
@@ -53,6 +80,9 @@ CREATE TABLE persons (
 
 INSERT INTO artists (name, year) VALUES
        ('Ayreon', 1995);
+
+INSERT INTO persons (first_name, last_name) VALUES
+       ('Arjen', 'Lucassen');
 
 INSERT INTO albums (name, artist, year) 
        SELECT 'The Human Equation', artists.id, 2004

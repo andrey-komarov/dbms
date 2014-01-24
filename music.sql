@@ -99,8 +99,9 @@ BEGIN
 END; 
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER album_released_after_group_establishment
-       BEFORE INSERT OR UPDATE ON albums
+CREATE CONSTRAINT TRIGGER album_released_after_group_establishment
+       AFTER INSERT OR UPDATE ON albums
+       DEFERRABLE INITIALLY DEFERRED
        FOR EACH ROW 
        EXECUTE PROCEDURE check_new_album_year();
        
@@ -124,8 +125,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER track_has_at_least_one_artist
-       BEFORE INSERT OR UPDATE ON tracks
+CREATE CONSTRAINT TRIGGER track_has_at_least_one_artist
+       AFTER INSERT OR UPDATE ON tracks
+       DEFERRABLE INITIALLY DEFERRED
        FOR EACH ROW 
        EXECUTE PROCEDURE check_track_has_at_least_one_artist();
 
@@ -154,13 +156,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER album_released_after_group_establishment_apt
-       BEFORE INSERT OR UPDATE ON artist_plays_track
+CREATE CONSTRAINT TRIGGER album_released_after_group_establishment_apt
+       AFTER INSERT OR UPDATE ON artist_plays_track
+       DEFERRABLE INITIALLY DEFERRED
        FOR EACH ROW 
        EXECUTE PROCEDURE check_if_track_artist_is_album_artist();
 
-CREATE TRIGGER album_released_after_group_establishment_tia
-       BEFORE INSERT OR UPDATE ON track_in_album
+CREATE CONSTRAINT TRIGGER album_released_after_group_establishment_tia
+       AFTER INSERT OR UPDATE ON track_in_album
+       DEFERRABLE INITIALLY DEFERRED
        FOR EACH ROW 
        EXECUTE PROCEDURE check_if_track_artist_is_album_artist();
 

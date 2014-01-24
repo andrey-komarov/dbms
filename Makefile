@@ -8,4 +8,4 @@ music:
 	#psql -f music-tracks.sql
 	#python gen-inserts-roles.py > music-roles.sql
 	#psql -f music-roles.sql
-	psql -f music-depechemode.sql
+	psql -f music-covers.sql

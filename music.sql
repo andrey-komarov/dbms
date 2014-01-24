@@ -23,6 +23,8 @@ DROP FUNCTION IF EXISTS check_if_track_artist_is_album_artist();
 DROP FUNCTION IF EXISTS check_track_has_at_least_one_artist();
 DROP FUNCTION IF EXISTS add_to_supercovers();
 
+DROP VIEW IF EXISTS numcovers;
+
 /************
  * Сущности *
  ************/
@@ -214,3 +216,13 @@ CREATE TRIGGER fill_supercovers
        AFTER INSERT OR UPDATE ON covers
        FOR EACH ROW
        EXECUTE PROCEDURE add_to_supercovers();
+
+
+/*********************************************
+ * View: сколько у песни каверов в поддереве *
+ *********************************************/
+
+CREATE VIEW numcovers AS
+       SELECT superoriginal AS trackid, count(*) AS cnt
+       FROM supercovers
+       GROUP BY superoriginal;

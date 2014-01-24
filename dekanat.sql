@@ -64,6 +64,8 @@ create table Marks (
     constraint mark_ok check (Mark <= 5 and Mark > 1)
 );
 
+begin transaction;
+
 insert into Persons (Id, FirstName, LastName) values
     (1, 'Андрей', 'Комаров'),
     (2, 'Сергей', 'Мельников'),
@@ -85,19 +87,19 @@ insert into StudentsInGroups (PersonId, GroupId) values
     (1, 1),
     (2, 2);
 
---insert into CoursesRead (Id, Year, CourseId) values
---    (1, '2013', 1),
---    (2, '2013', 2);
+insert into CoursesRead (Id, Year, CourseId, WhoTaughtCourse, GroupTaughtCourseTo) values
+    (1, '2013', 1, 1, 1);
 
---insert into CourseReadToGroups (GroupId, CourseReadId) values
---    (1, 1),
---    (2, 2);
+insert into CourseReadToGroups (Id, GroupId, CourseReadId) values
+    (1, 1, 1);
 
---insert into CourseReadPerson (PersonId, CourseReadId) values
---    (3, 1);
+insert into CourseReadPerson (Id, PersonId, CourseReadId) values
+    (1, 3, 1);
 
---insert into Marks (StudentId, ReadCourseId, Mark) values
---    (1, 1, 5);
+insert into Marks (StudentId, ReadCourseId, Mark) values
+    (1, 1, 5);
+
+commit;
 
 alter table CoursesRead drop constraint CoursesRead_fk1;
 alter table CoursesRead drop constraint CoursesRead_fk2;

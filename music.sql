@@ -13,42 +13,43 @@ DROP TABLE IF EXISTS roles CASCADE;
 
 DROP TABLE IF EXISTS covers CASCADE;
 DROP TABLE IF EXISTS artist_plays_track CASCADE;
-DROP TABLE IF EXISTS artist_plays_album CASCADE;
 DROP TABLE IF EXISTS track_in_album CASCADE;
 
 DROP FUNCTION IF EXISTS check_new_album_year();
+DROP FUNCTION IF EXISTS check_if_track_artist_is_album_artist();
+DROP FUNCTION IF EXISTS check_track_has_at_least_one_artist();
 
 /************
  * Сущности *
  ************/
 
 CREATE TABLE persons (
-       id            SERIAL NOT NULL PRIMARY KEY,
+       personid      SERIAL NOT NULL PRIMARY KEY,
        first_name    text NOT NULL,
        last_name     text
 );
 
 CREATE TABLE roles (
-       id          SERIAL NOT NULL PRIMARY KEY,
+       roleid      SERIAL NOT NULL PRIMARY KEY,
        role        text NOT NULL,
        UNIQUE(role)
 );
 
 CREATE TABLE artists (
-       id            SERIAL NOT NULL PRIMARY KEY,
+       artistid      SERIAL NOT NULL PRIMARY KEY,
        name          text NOT NULL,
        year          int
 );
 
 CREATE TABLE albums (
-       id           SERIAL NOT NULL PRIMARY KEY,
+       albumid      SERIAL NOT NULL PRIMARY KEY,
        name         text NOT NULL,
-       artist       integer NOT NULL REFERENCES artists,
+       artistid     integer NOT NULL REFERENCES artists,
        year         int
 );
 
 CREATE TABLE tracks (
-       id          SERIAL PRIMARY KEY,
+       trackid     SERIAL PRIMARY KEY,
        title       text NOT NULL,       
        year        int
 );
@@ -64,20 +65,14 @@ CREATE TABLE covers (
 );
 
 CREATE TABLE artist_plays_track (
-       artist                   integer NOT NULL REFERENCES artists,
-       track                    integer NOT NULL REFERENCES tracks,
-       UNIQUE(artist, track)
-);
-
-CREATE TABLE artist_plays_album (
-       artist                   integer REFERENCES artists,
-       album                    integer REFERENCES albums,
-       UNIQUE(artist, album)
+       artistid                 integer NOT NULL REFERENCES artists,
+       trackid                  integer NOT NULL REFERENCES tracks,
+       UNIQUE(artistid, trackid)
 );
 
 CREATE TABLE track_in_album (
-       track                integer NOT NULL REFERENCES tracks,
-       album                integer NOT NULL REFERENCES albums
+       trackid              integer NOT NULL REFERENCES tracks,
+       albumid              integer NOT NULL REFERENCES albums
 );
 
 /**********************
@@ -108,43 +103,65 @@ CREATE TRIGGER album_released_after_group_establishment
        BEFORE INSERT OR UPDATE ON albums
        FOR EACH ROW 
        EXECUTE PROCEDURE check_new_album_year();
+       
+/************************************
+ * У песни хотя бы один исполнитель *
+ ************************************/
+CREATE FUNCTION check_track_has_at_least_one_artist()
+       RETURNS trigger AS
+$$
+DECLARE
+   bad record;
+BEGIN
+   SELECT NEW.title 
+       INTO bad
+       FROM artist_plays_track at
+       WHERE NEW.trackid = at.trackid;
+   IF NOT FOUND THEN
+      RAISE EXCEPTION 'Nobody plays <<%>> :(', NEW.title;
+   END IF;
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER track_has_at_least_one_artist
+       BEFORE INSERT OR UPDATE ON tracks
+       FOR EACH ROW 
+       EXECUTE PROCEDURE check_track_has_at_least_one_artist();
+
 
 /**********************************************************
  * Если песня в альбоме, то этот альбом исполняет один из *
  * исполнителей песни                                     *
  **********************************************************/
-/* CREATE FUNCTION check_if_track_artist_is_album_artist()
+CREATE FUNCTION check_if_track_artist_is_album_artist()
        RETURNS trigger AS
 $$
 DECLARE
    bad record;
 BEGIN
    SELECT * INTO bad
-            FROM tracks as t,
-                                  
-            WHERE EXISTS (
-                  SELECT 
-   FOR album IN 
-       SELECT albums.id
-              FROM albums
-              WHERE albums.id = NEW.id
-   SELECT albums.id
-          INTO album_id
-          FROM albums
-          WHERE NEW.
+            FROM track_in_album t NATURAL JOIN albums
+            WHERE artistid NOT IN (
+                  SELECT artistid
+                         FROM artist_plays_track at
+                         WHERE t.trackid = at.trackid
+            );
+   IF FOUND THEN
+      RAISE EXCEPTION 'Track''s artist is not in any of albums'' artists';
+   END IF;
+   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-*/
 
-INSERT INTO artists (name, year) VALUES
-       ('Ayreon', 1995);
+CREATE TRIGGER album_released_after_group_establishment_apt
+       BEFORE INSERT OR UPDATE ON artist_plays_track
+       FOR EACH ROW 
+       EXECUTE PROCEDURE check_if_track_artist_is_album_artist();
 
-INSERT INTO albums (name, artist, year) 
-       SELECT 'The Human Equation', artists.id, 2004
-       FROM artists 
-       WHERE name = 'Ayreon';
+CREATE TRIGGER album_released_after_group_establishment_tia
+       BEFORE INSERT OR UPDATE ON track_in_album
+       FOR EACH ROW 
+       EXECUTE PROCEDURE check_if_track_artist_is_album_artist();
 
-SELECT * FROM albums;
-
-SELECT * FROM artists;
 

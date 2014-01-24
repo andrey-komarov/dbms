@@ -24,6 +24,7 @@ DROP FUNCTION IF EXISTS check_track_has_at_least_one_artist();
 DROP FUNCTION IF EXISTS add_to_supercovers();
 
 DROP VIEW IF EXISTS numcovers;
+DROP VIEW IF EXISTS numcovers2;
 
 /************
  * Сущности *
@@ -222,7 +223,27 @@ CREATE TRIGGER fill_supercovers
  * View: сколько у песни каверов в поддереве *
  *********************************************/
 
-CREATE VIEW numcovers AS
+CREATE MATERIALIZED VIEW numcovers AS
        SELECT superoriginal AS trackid, count(*) AS cnt
        FROM supercovers
        GROUP BY superoriginal;
+
+CREATE UNIQUE INDEX numcovers_tid ON numcovers (trackid); 
+
+CREATE VIEW numcovers2 AS
+       WITH RECURSIVE clcovers(orig, cov) AS (
+            SELECT original AS orig, cover AS cov
+            FROM covers
+       UNION ALL
+            SELECT c1.orig, c2.cover
+            FROM clcovers c1 INNER JOIN covers c2 ON (cov = original)            
+       )
+       SELECT orig AS trackid, count(*) AS cnt
+       FROM clcovers
+       WHERE NOT EXISTS (
+             SELECT *
+             FROM covers
+             WHERE cover = orig
+       )
+       GROUP BY orig;
+

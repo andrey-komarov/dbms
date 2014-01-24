@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS covers CASCADE;
 DROP TABLE IF EXISTS artist_plays_track CASCADE;
 DROP TABLE IF EXISTS track_in_album CASCADE;
+DROP TABLE IF EXISTS role_in_group CASCADE;
 
 DROP FUNCTION IF EXISTS check_new_album_year();
 DROP FUNCTION IF EXISTS check_if_track_artist_is_album_artist();
@@ -60,7 +61,7 @@ CREATE TABLE tracks (
 
 CREATE TABLE covers (
        original     integer NOT NULL REFERENCES tracks,
-       cover        integer NOT NULL REFERENCES tracks,
+       cover        integer NOT NULL REFERENCES tracks PRIMARY KEY,
        UNIQUE(original, cover)
 );
 
@@ -72,7 +73,15 @@ CREATE TABLE artist_plays_track (
 
 CREATE TABLE track_in_album (
        trackid              integer NOT NULL REFERENCES tracks,
-       albumid              integer NOT NULL REFERENCES albums
+       albumid              integer NOT NULL REFERENCES albums,
+       UNIQUE(trackid, albumid)
+);
+
+CREATE TABLE role_in_group (
+       artistid            integer NOT NULL REFERENCES artists,
+       personid            integer NOT NULL REFERENCES persons,
+       roleid              integer NOT NULL REFERENCES roles,
+       UNIQUE(artistid, personid, roleid)
 );
 
 /**********************
@@ -91,7 +100,8 @@ BEGIN
    SELECT NEW.name
        INTO bad
        FROM artists
-       WHERE NEW.year < artists.year;
+       WHERE NEW.year < artists.year 
+             AND NEW.artistid = artists.artistid;
    IF FOUND THEN
       RAISE EXCEPTION 'Bad <<%>>''s year', NEW.name;
    END IF;

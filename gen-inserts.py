@@ -6,7 +6,7 @@ with open('music-input.csv') as csvfile:
         artist, album, year, title = row
         print ("""BEGIN;
 
-INSERT INTO albums (name, artistid, year)
+INSERT INTO albums (name, artistid, albumyear)
     SELECT '{album}', artistid, {year}
     FROM artists
     WHERE name = '{artist}'
@@ -14,7 +14,7 @@ INSERT INTO albums (name, artistid, year)
             SELECT * FROM albums WHERE name = '{album}'
         );
 
-INSERT INTO tracks (title, year) VALUES
+INSERT INTO tracks (title, trackyear) VALUES
     ('{title}', {year});
 
 INSERT INTO artist_plays_track (artistid, trackid)

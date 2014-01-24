@@ -16,9 +16,12 @@ DROP TABLE IF EXISTS artist_plays_track CASCADE;
 DROP TABLE IF EXISTS track_in_album CASCADE;
 DROP TABLE IF EXISTS role_in_group CASCADE;
 
+DROP TABLE IF EXISTS supercovers CASCADE;
+
 DROP FUNCTION IF EXISTS check_new_album_year();
 DROP FUNCTION IF EXISTS check_if_track_artist_is_album_artist();
 DROP FUNCTION IF EXISTS check_track_has_at_least_one_artist();
+DROP FUNCTION IF EXISTS add_to_supercovers();
 
 /************
  * Сущности *
@@ -39,20 +42,20 @@ CREATE TABLE roles (
 CREATE TABLE artists (
        artistid      SERIAL NOT NULL PRIMARY KEY,
        name          text NOT NULL,
-       year          int
+       artistyear    int
 );
 
 CREATE TABLE albums (
        albumid      SERIAL NOT NULL PRIMARY KEY,
        name         text NOT NULL,
        artistid     integer NOT NULL REFERENCES artists,
-       year         int
+       albumyear         int
 );
 
 CREATE TABLE tracks (
        trackid     SERIAL PRIMARY KEY,
        title       text NOT NULL,       
-       year        int
+       trackyear   int
 );
 
 /**********************
@@ -100,7 +103,7 @@ BEGIN
    SELECT NEW.name
        INTO bad
        FROM artists
-       WHERE NEW.year < artists.year 
+       WHERE NEW.albumyear < artists.artistyear 
              AND NEW.artistid = artists.artistid;
    IF FOUND THEN
       RAISE EXCEPTION 'Bad <<%>>''s year', NEW.name;
@@ -178,4 +181,36 @@ CREATE CONSTRAINT TRIGGER album_released_after_group_establishment_tia
        FOR EACH ROW 
        EXECUTE PROCEDURE check_if_track_artist_is_album_artist();
 
+/*********************************************************
+ * Есть дерево (это не проверено) каверов. Храним корень *
+ *********************************************************/
 
+CREATE TABLE supercovers (
+       superoriginal           integer REFERENCES tracks NOT NULL,
+       trackid                 integer REFERENCES tracks NOT NULL,
+       UNIQUE (superoriginal, trackid)
+);
+
+CREATE FUNCTION add_to_supercovers()
+       RETURNS trigger AS
+$$
+BEGIN
+    IF EXISTS (
+       SELECT * FROM supercovers WHERE trackid = NEW.original
+    ) THEN
+        INSERT INTO supercovers(superoriginal, trackid)
+               SELECT superoriginal, NEW.cover
+               FROM supercovers s
+               WHERE s.trackid = NEW.original;
+    ELSE
+        INSERT INTO supercovers(superoriginal, trackid) VALUES
+               (NEW.original, NEW.cover);        
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER fill_supercovers
+       AFTER INSERT OR UPDATE ON covers
+       FOR EACH ROW
+       EXECUTE PROCEDURE add_to_supercovers();
